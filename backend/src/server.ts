@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import chatRoutes from "./routes/chat.route";
 import authRoutes from "./routes/auth.route";
+import conversationCategoriesRoute from "./routes/conversationCategories.route";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ db.once("open", () => console.log("Connected to MongoDB"));
 app.get("/", (req, res) => {
   res.send("Mental Health Chatbot API is running...");
 });
+app.use("/api/categories", conversationCategoriesRoute);
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 

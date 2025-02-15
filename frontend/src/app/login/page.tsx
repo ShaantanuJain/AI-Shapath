@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { apiFetch, ApiError } from "@/lib/fetch";
 
 export default function CombinedAuthForm() {
-  // true = login mode; false = register mode
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
@@ -20,10 +19,7 @@ export default function CombinedAuthForm() {
   const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +29,6 @@ export default function CombinedAuthForm() {
 
     try {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
-
       const payload = isLogin
         ? { email: formData.email, password: formData.password }
         : { ...formData };
@@ -44,10 +39,10 @@ export default function CombinedAuthForm() {
         body: JSON.stringify(payload),
       });
 
-      // When successful, log in the user using the context method.
-      login(data.token, data.user);
+      // Use only the token from the response.
+      await login(data.token);
 
-      // Redirect after authentication (for example, to the homepage)
+      // Redirect after authentication
       window.location.href = "/chat";
     } catch (err) {
       if (err instanceof ApiError) {
@@ -73,7 +68,6 @@ export default function CombinedAuthForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Show name field only when in Register mode */}
           {!isLogin && (
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">
@@ -159,7 +153,6 @@ export default function CombinedAuthForm() {
               type="button"
               onClick={() => {
                 setIsLogin(!isLogin);
-                // Clear any previous error and reset form state if needed
                 setError("");
               }}
               className="text-sm text-primary hover:underline"

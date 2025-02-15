@@ -100,6 +100,7 @@ router.get(
       if (!user) {
         res.status(404).json({ error: "User not found" });
       }
+      console.log(user?.isAdmin);
       res.json(user);
     } catch (error) {
       res.status(500).json({ error: "Failed to get user data" });

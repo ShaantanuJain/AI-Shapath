@@ -6,6 +6,7 @@ interface IUser extends Document {
   email: string;
   password: string;
   name: string;
+  isAdmin: boolean;
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -24,6 +25,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -33,7 +38,6 @@ const userSchema = new mongoose.Schema({
 // Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
