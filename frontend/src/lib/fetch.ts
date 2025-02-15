@@ -25,7 +25,6 @@ export async function apiFetch<T = any>(
     Authorization: token ? `Bearer ${token}` : "",
     ...headers,
   };
-
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers: requestHeaders,
     ...rest,
