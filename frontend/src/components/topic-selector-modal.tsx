@@ -1,3 +1,6 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Card } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Battery,
   Brain,
@@ -112,4 +115,44 @@ const topics = [
     textColor: "text-[#004D00]",
   },
 ]
+
+interface TopicSelectorModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSelectTopic: (topicId: string) => void
+}
+
+export function TopicSelectorModal({ isOpen, onClose, onSelectTopic }: TopicSelectorModalProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Choose a Topic</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-[60vh] pr-4">
+          <div className="grid gap-4 py-4">
+            {topics.map((topic) => {
+              const Icon = topic.icon
+              return (
+                <Card
+                  key={topic.id}
+                  className={`p-4 cursor-pointer transition-colors ${topic.gradient} ${topic.textColor}`}
+                  onClick={() => onSelectTopic(topic.id)}
+                >
+                  <div className="flex items-start gap-4">
+                    <Icon className="w-5 h-5 mt-0.5" />
+                    <div className="space-y-1">
+                      <h3 className="font-medium leading-none">{topic.name}</h3>
+                      <p className="text-sm opacity-80">{topic.description}</p>
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
