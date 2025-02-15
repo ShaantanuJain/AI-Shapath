@@ -5,6 +5,7 @@ import cors from "cors";
 import chatRoutes from "./routes/chat.route";
 import authRoutes from "./routes/auth.route";
 import conversationCategoriesRoute from "./routes/conversationCategories.route";
+import geminiChatRoute from "./routes/gemini.route";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.get("/", (req, res) => {
 app.use("/api/categories", conversationCategoriesRoute);
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/gemini", geminiChatRoute);
 
 // Start the server
 const PORT = process.env.PORT || 5000;
