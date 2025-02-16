@@ -8,7 +8,7 @@ import { TopicSelectorModal } from "@/components/topic-selector-modal";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/contexts/auth-context";
 import { apiFetch, ApiError } from "@/lib/fetch";
-import { TopicsProvider } from "@/contexts/topics-context";
+import { TopicsProvider, useTopics } from "@/contexts/topics-context";
 
 interface ChatSession {
   id: string;
@@ -30,6 +30,7 @@ export default function Home() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isTopicSelectorOpen, setIsTopicSelectorOpen] = useState(false);
   const { token } = useAuth();
+  const { topics } = useTopics();
 
   // ----------------------------------------------------------------------------
   // 1. Fetch existing sessions from the backend when the component mounts
@@ -79,12 +80,13 @@ export default function Home() {
         method: "POST",
         body: JSON.stringify({ conversationCategoryId: topicId }),
       });
+      const topic = topics.find((t) => t._id === topicId);
 
       // Convert the created session to ChatSession format for the frontend
       const newSession: ChatSession = {
         id: newSessionData._id,
-        title: newSessionData.conversation?.name || "New Chat",
-        topic: newSessionData.conversation?._id || "",
+        title: topic?.name || "New Chat",
+        topic: newSessionData.conversation,
         lastMessage: "",
         messages: [],
       };

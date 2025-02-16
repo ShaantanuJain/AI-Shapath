@@ -29,7 +29,7 @@ interface TopicSelectorModalProps {
   onSelectTopic: (topicId: string) => void;
 }
 
-const iconMap: Record<string, React.ElementType> = {
+export const iconMap: Record<string, React.ElementType> = {
   MessageCircle,
   Brain,
   Heart,

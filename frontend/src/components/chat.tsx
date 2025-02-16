@@ -68,17 +68,14 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
         );
 
         setMessages(newMessages);
-        if (session.lastMessage !== newMessages[newMessages.length - 1].content)
+        if (session.lastMessage !== newMessages[0].content)
           onUpdateSession({
             ...session,
-            lastMessage:
-              newMessages.length > 0
-                ? newMessages[newMessages.length - 1].content
-                : "",
+            lastMessage: newMessages.length > 0 ? newMessages[0].content : "",
           });
       } catch (error) {
         console.error("Failed to fetch chat log:", error);
-        // Optionally show a toast/notification to the user here.
+        setMessages([]);
       }
     };
 
@@ -188,8 +185,10 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
               <div
                 className={`rounded-lg px-4 py-2 max-w-[80%] ${
                   message.role === "user"
-                    ? `bg-primary ${currentTopic?.textColor || ""}`
-                    : `bg-muted ${currentTopic?.textColor || ""}`
+                    ? // For user: white background and the topic text color for text
+                      `bg-white ${currentTopic?.textColor || ""}`
+                    : // For AI: background is the topic’s color and white text.
+                      `bg-white/30 backdrop-blur-md ${(currentTopic?.textColor || "").replace("text-", "bg-")} text-white`
                 }`}
               >
                 <p className="text-sm">{message.content}</p>
