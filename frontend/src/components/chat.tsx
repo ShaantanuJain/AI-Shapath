@@ -35,6 +35,9 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
   const [input, setInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [messages, setMessages] = useState<Message[]>(session.messages);
+  const [redirectSuggestion, setRedirectSuggestion] = useState<string | null>(
+    "Good Id",
+  );
   const { topics } = useTopics();
   const token = useAuth().token;
 
@@ -101,17 +104,22 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
 
     try {
       setIsAiTyping(true);
-      const response = await apiFetch<{ chatLog: any; session: ChatSession }>(
-        "/api/chat/message",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            sessionId: session.id,
-            userMessage: messageContent,
-          }),
-          token: token!,
-        },
-      );
+      const response = await apiFetch<{
+        chatLog: any;
+        session: ChatSession;
+        redirectToOtherCategory?: string;
+      }>("/api/chat/message", {
+        method: "POST",
+        body: JSON.stringify({
+          sessionId: session.id,
+          userMessage: messageContent,
+        }),
+        token: token!,
+      });
+
+      if (response.redirectToOtherCategory) {
+        setRedirectSuggestion(response.redirectToOtherCategory);
+      }
 
       // The backend returns an updated chatLog and session.
       // Convert chatLog.messages to the Message interface.
@@ -152,6 +160,30 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
   const handleSendEmotion = async (emotion: string) => {
     const emotionText = `I'm feeling ${emotion.toLowerCase()}.`;
     await sendMessage(emotionText);
+  };
+  const handleCategoryChange = async () => {
+    if (!redirectSuggestion || !token) return;
+
+    try {
+      const response = await apiFetch<{ session: ChatSession }>(
+        `/api/chat/change-category`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            sessionId: session.id,
+            newCategoryId: redirectSuggestion,
+          }),
+          token: token,
+        },
+      );
+
+      if (response.session) {
+        onUpdateSession(response.session);
+        setRedirectSuggestion(null);
+      }
+    } catch (error) {
+      console.error("Failed to change category:", error);
+    }
   };
 
   return (
@@ -209,6 +241,26 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
           )}
         </div>
       </ScrollArea>
+      {redirectSuggestion && (
+        <div className="px-4 py-2 bg-yellow-100 border-t border-yellow-200">
+          <p className="text-sm text-yellow-800 mb-2">
+            Would you like to move this conversation to a more appropriate
+            category? The AI suggests: {redirectSuggestion}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleCategoryChange}>
+              Yes, change category
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRedirectSuggestion(null)}
+            >
+              No, keep current category
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="p-4 border-t">
         <form onSubmit={handleSend} className="flex gap-2">
           <Input

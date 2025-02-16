@@ -41,6 +41,13 @@ sessionSchema.pre(/^find/, function (next) {
   (this as any).populate("conversation");
   next();
 });
+
+sessionSchema.methods.changeCategory = async function (
+  newCategoryId: Schema.Types.ObjectId,
+) {
+  this.conversation = newCategoryId;
+  return this.save();
+};
 // Note: If you use findOneAndUpdate or similar operations that are not covered by /^find/,
 // consider adding similar pre-hooks for them as needed.
 

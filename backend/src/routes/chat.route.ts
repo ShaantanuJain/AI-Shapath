@@ -95,10 +95,13 @@ router.post("/message", async (req: AuthRequest, res) => {
       // For example:
       // session.conversation = aiResult.redirectToOtherCategory;
       console.log("Redirecting to another category");
-      await session.save();
+      // await session.save();
     }
-
-    res.status(200).json({ chatLog, session });
+    res.status(200).json({
+      chatLog,
+      session,
+      redirectToOtherCategory: aiResult.redirectToOtherCategory || null,
+    });
   } catch (error) {
     console.error("Error processing message:", error);
     res.status(500).json({ error: "Failed to process chat message" });
@@ -153,6 +156,44 @@ router.get("/user/:userId", async (req: AuthRequest, res) => {
   } catch (error) {
     console.error("Error fetching user chat logs:", error);
     res.status(500).json({ error: "Failed to retrieve chat logs" });
+  }
+});
+
+router.post("/change-category", async (req: AuthRequest, res) => {
+  try {
+    const { sessionId, newCategoryId } = req.body;
+    const userId = req.user?.userId;
+
+    if (!sessionId || !newCategoryId || !userId) {
+      res.status(400).json({
+        error: "Missing sessionId, newCategoryId, or authorization",
+      });
+      return;
+    }
+
+    // Find and update the session
+    const session = await Session.findOne({ _id: sessionId, userId });
+
+    if (!session) {
+      res.status(404).json({ error: "Session not found" });
+      return;
+    }
+
+    // Update the conversation category
+    session.conversation = newCategoryId;
+    await session.save();
+
+    // Get the updated session with populated conversation
+    const updatedSession =
+      await Session.findById(sessionId).populate("conversation");
+
+    res.status(200).json({
+      message: "Category updated successfully",
+      session: updatedSession,
+    });
+  } catch (error) {
+    console.error("Error changing category:", error);
+    res.status(500).json({ error: "Failed to change category" });
   }
 });
 
