@@ -1,160 +1,80 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send } from "lucide-react"
-
-const topics = [
-  {
-    id: "general",
-    name: "General Chat",
-    gradient: "bg-gradient-to-r from-[#5CA9E9] to-white",
-    textColor: "text-[#00264D]",
-    emotions: ["Happy", "Sad", "Neutral", "Confused"],
-  },
-  {
-    id: "anxiety",
-    name: "Anxiety Support",
-    gradient: "bg-gradient-to-r from-[#7BC393] to-[#E4F3E3]",
-    textColor: "text-[#0B3B0B]",
-    emotions: ["Anxious", "Calm", "Overwhelmed", "Hopeful"],
-  },
-  {
-    id: "relationships",
-    name: "Relationship Guidance",
-    gradient: "bg-gradient-to-r from-[#FFA5CB] to-[#FFD3A5]",
-    textColor: "text-[#800020]",
-    emotions: ["Loved", "Heartbroken", "Confused", "Hopeful"],
-  },
-  {
-    id: "diagnosis",
-    name: "Symptom Diagnosis",
-    gradient: "bg-white",
-    accentColor: "bg-[#F5F5F5]",
-    textColor: "text-[#333333]",
-    emotions: ["Worried", "Curious", "Relieved", "Uncertain"],
-  },
-  {
-    id: "burnout",
-    name: "Burnout Prevention",
-    gradient: "bg-gradient-to-r from-[#31B7C2] to-[#B2EBF2]",
-    textColor: "text-[#004D4D]",
-    emotions: ["Exhausted", "Motivated", "Stressed", "Recharged"],
-  },
-  {
-    id: "digital-wellness",
-    name: "Digital Wellness",
-    gradient: "bg-gradient-to-r from-[#9E7BB5] to-[#D3D3FF]",
-    textColor: "text-[#3A015C]",
-    emotions: ["Connected", "Overwhelmed", "Focused", "Distracted"],
-  },
-  {
-    id: "climate-anxiety",
-    name: "Climate Anxiety",
-    gradient: "bg-gradient-to-r from-[#45B649] to-[#DCE35B]",
-    textColor: "text-[#3C4D03]",
-    emotions: ["Worried", "Hopeful", "Empowered", "Helpless"],
-  },
-  {
-    id: "financial-wellness",
-    name: "Financial Wellness",
-    gradient: "bg-gradient-to-r from-[#006663] to-[#D2FFFF]",
-    textColor: "text-[#000033]",
-    emotions: ["Secure", "Anxious", "Confident", "Overwhelmed"],
-  },
-  {
-    id: "loneliness",
-    name: "Loneliness Support",
-    gradient: "bg-gradient-to-r from-[#FFA31D] to-[#FCCF31]",
-    textColor: "text-[#4B2800]",
-    emotions: ["Lonely", "Connected", "Isolated", "Supported"],
-  },
-  {
-    id: "mindfulness",
-    name: "Mindfulness & Meditation",
-    gradient: "bg-gradient-to-r from-[#5CA9E9] to-[#E4F3E3]",
-    textColor: "text-[#1A0066]",
-    emotions: ["Calm", "Focused", "Distracted", "Peaceful"],
-  },
-  {
-    id: "crisis",
-    name: "Crisis Management",
-    gradient: "bg-gradient-to-r from-[#505250] to-[#CBD3C1]",
-    textColor: "text-[#000000]",
-    emotions: ["Overwhelmed", "Hopeful", "Scared", "Supported"],
-  },
-  {
-    id: "holistic-health",
-    name: "Holistic Health",
-    gradient: "bg-gradient-to-r from-[#26C6DA] to-[#7BC393]",
-    textColor: "text-[#004D00]",
-    emotions: ["Balanced", "Energized", "Drained", "Harmonious"],
-  },
-]
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send } from "lucide-react";
+import { useTopics } from "@/contexts/topics-context";
 
 interface Message {
-  id: string
-  content: string
-  role: "user" | "assistant"
-  timestamp: Date
+  id: string;
+  content: string;
+  role: "user" | "assistant";
+  timestamp: Date;
 }
 
-interface ChatSession {
-  id: string
-  title: string
-  topic: string
-  lastMessage: string
-  messages: Message[]
+export interface ChatSession {
+  id: string;
+  title: string;
+  topic: string;
+  lastMessage: string;
+  messages: Message[];
 }
 
 interface ChatProps {
-  session: ChatSession
-  onUpdateSession: (updatedSession: ChatSession) => void
+  session: ChatSession;
+  onUpdateSession: (updatedSession: ChatSession) => void;
 }
 
 export function Chat({ session, onUpdateSession }: ChatProps) {
-  const [input, setInput] = useState("")
-  const [isAiTyping, setIsAiTyping] = useState(false)
+  const [input, setInput] = useState("");
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  // Get topics from context instead of using a hardcoded array.
+  const { topics } = useTopics();
+
+  // Find the topic that matches the session's topic ID.
+  // (This assumes the session.topic matches the topic _id from your categories.)
+  const currentTopic = topics.find((t) => t._id === session.topic);
 
   const handleSend = () => {
-    if (!input.trim()) return
+    if (!input.trim()) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
       content: input,
       role: "user",
       timestamp: new Date(),
-    }
+    };
 
-    const updatedMessages = [...session.messages, newMessage]
+    const updatedMessages = [...session.messages, newMessage];
     onUpdateSession({
       ...session,
       messages: updatedMessages,
       lastMessage: input,
-    })
-    setInput("")
+    });
+    setInput("");
 
     // Simulate AI typing
-    setIsAiTyping(true)
+    setIsAiTyping(true);
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: "This is a simulated AI response. In a real application, this would be generated by the AI model.",
+        content:
+          "This is a simulated AI response. In a real application, this would be generated by the AI model.",
         role: "assistant",
         timestamp: new Date(),
-      }
-      const finalMessages = [...updatedMessages, aiResponse]
+      };
+      const finalMessages = [...updatedMessages, aiResponse];
       onUpdateSession({
         ...session,
         messages: finalMessages,
         lastMessage: aiResponse.content,
-      })
-      setIsAiTyping(false)
-    }, 2000) // Simulate 2 seconds of typing
-  }
+      });
+      setIsAiTyping(false);
+    }, 2000);
+  };
 
   const handleSendEmotion = (emotion: string) => {
     const newMessage: Message = {
@@ -162,43 +82,48 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       content: `I'm feeling ${emotion.toLowerCase()}.`,
       role: "user",
       timestamp: new Date(),
-    }
+    };
 
-    const updatedMessages = [...session.messages, newMessage]
+    const updatedMessages = [...session.messages, newMessage];
     onUpdateSession({
       ...session,
       messages: updatedMessages,
       lastMessage: newMessage.content,
-    })
+    });
 
     // Simulate AI response
-    setIsAiTyping(true)
+    setIsAiTyping(true);
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: `I understand that you're feeling ${emotion.toLowerCase()}. Let's talk about it.`,
         role: "assistant",
         timestamp: new Date(),
-      }
-      const finalMessages = [...updatedMessages, aiResponse]
+      };
+      const finalMessages = [...updatedMessages, aiResponse];
       onUpdateSession({
         ...session,
         messages: finalMessages,
         lastMessage: aiResponse.content,
-      })
-      setIsAiTyping(false)
-    }, 1500)
-  }
-
-  const currentTopic = topics.find((t) => t.id === session.topic)
+      });
+      setIsAiTyping(false);
+    }, 1500);
+  };
 
   return (
-    <Card className={`flex flex-col h-full ${currentTopic?.gradient}`}>
-      <div className={`p-4 border-b ${currentTopic?.textColor}`}>
-        <h2 className="text-lg font-semibold mb-2">{currentTopic?.name}</h2>
+    <Card className={`flex flex-col h-full ${currentTopic?.gradient || ""}`}>
+      <div className={`p-4 border-b ${currentTopic?.textColor || ""}`}>
+        <h2 className="text-lg font-semibold mb-2">
+          {currentTopic?.name || "Chat"}
+        </h2>
         <div className="flex flex-wrap gap-2">
-          {currentTopic?.emotions.map((emotion) => (
-            <Button key={emotion} variant="outline" size="sm" onClick={() => handleSendEmotion(emotion)}>
+          {currentTopic?.emotions?.map((emotion) => (
+            <Button
+              key={emotion}
+              variant="outline"
+              size="sm"
+              onClick={() => handleSendEmotion(emotion)}
+            >
               {emotion}
             </Button>
           ))}
@@ -207,22 +132,31 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {session.messages.map((message) => (
-            <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={message.id}
+              className={`flex ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
               <div
                 className={`rounded-lg px-4 py-2 max-w-[80%] ${
                   message.role === "user"
-                    ? `bg-primary ${currentTopic?.textColor}`
-                    : `bg-muted ${currentTopic?.textColor}`
+                    ? `bg-primary ${currentTopic?.textColor || ""}`
+                    : `bg-muted ${currentTopic?.textColor || ""}`
                 }`}
               >
                 <p className="text-sm">{message.content}</p>
-                <time className="text-xs opacity-70">{message.timestamp.toLocaleTimeString()}</time>
+                <time className="text-xs opacity-70">
+                  {message.timestamp.toLocaleTimeString()}
+                </time>
               </div>
             </div>
           ))}
           {isAiTyping && (
             <div className="flex justify-start">
-              <div className={`rounded-lg px-4 py-2 bg-muted ${currentTopic?.textColor}`}>
+              <div
+                className={`rounded-lg px-4 py-2 bg-muted ${currentTopic?.textColor || ""}`}
+              >
                 <p className="text-sm">AI is typing...</p>
               </div>
             </div>
@@ -232,12 +166,16 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       <div className="p-4 border-t">
         <form
           onSubmit={(e) => {
-            e.preventDefault()
-            handleSend()
+            e.preventDefault();
+            handleSend();
           }}
           className="flex gap-2"
         >
-          <Input placeholder="Type your message..." value={input} onChange={(e) => setInput(e.target.value)} />
+          <Input
+            placeholder="Type your message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
           <Button type="submit" size="icon">
             <Send className="h-4 w-4" />
             <span className="sr-only">Send message</span>
@@ -245,6 +183,5 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
         </form>
       </div>
     </Card>
-  )
+  );
 }
-

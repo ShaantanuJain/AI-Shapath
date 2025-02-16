@@ -1,16 +1,15 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
+import { ISession } from "./Session";
 
-// Define an interface for individual messages
 export interface IMessage {
-  role: string; // 'user' or 'bot'
+  role: string; // e.g. 'user' or 'model'
   content: string;
   timestamp?: Date;
 }
 
-// Define interface for ChatLog document
 export interface IChatLog extends Document {
   userId: string;
-  sessionId: string;
+  session: Schema.Types.ObjectId | ISession; // Reference to a Session document
   messages: IMessage[];
   createdAt: Date;
 }
@@ -20,9 +19,10 @@ const chatLogSchema = new mongoose.Schema<IChatLog>({
     type: String,
     required: true,
   },
-  sessionId: {
-    type: String,
-    required: true, // Unique session identifier
+  session: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Session",
+    required: true,
   },
   messages: [
     {
@@ -45,7 +45,5 @@ const chatLogSchema = new mongoose.Schema<IChatLog>({
     default: Date.now,
   },
 });
-
-// You can add model-level middleware or instance methods here if needed
 
 export const ChatLog = mongoose.model<IChatLog>("ChatLog", chatLogSchema);

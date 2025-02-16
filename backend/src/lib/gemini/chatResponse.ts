@@ -9,7 +9,7 @@ export async function chatResponse(
   userMessage: string,
   session: {
     systemInstruction: string;
-    redirectToOtherCategory: string;
+    redirectToOtherCategory: boolean;
   },
 ) {
   const responseSchema: Schema = {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,19 +21,7 @@ import {
   Stethoscope,
   Users,
 } from "lucide-react";
-import { apiFetch } from "@/lib/fetch";
-import { useAuth } from "@/contexts/auth-context";
-
-// Create a TypeScript type for a category as it comes from backend
-interface Category {
-  _id: string;
-  name: string;
-  description: string;
-  icon: string;
-  imageUrl?: string;
-  gradient: string;
-  textColor: string;
-}
+import { useTopics } from "@/contexts/topics-context";
 
 interface TopicSelectorModalProps {
   isOpen: boolean;
@@ -41,55 +29,27 @@ interface TopicSelectorModalProps {
   onSelectTopic: (topicId: string) => void;
 }
 
+const iconMap: Record<string, React.ElementType> = {
+  MessageCircle,
+  Brain,
+  Heart,
+  Stethoscope,
+  Battery,
+  Smartphone,
+  Cloud,
+  DollarSign,
+  Users,
+  Lotus, // using lotus for mindfulness & meditation
+  LifeBuoy,
+  Flower2,
+};
+
 export function TopicSelectorModal({
   isOpen,
   onClose,
   onSelectTopic,
 }: TopicSelectorModalProps) {
-  const [topics, setTopics] = useState<Category[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const token = useAuth().token;
-
-  // Map the icon string to the actual lucide-react component.
-  const iconMap: Record<string, React.ElementType> = {
-    MessageCircle,
-    Brain,
-    Heart,
-    Stethoscope,
-    Battery,
-    Smartphone,
-    Cloud,
-    DollarSign,
-    Users,
-    Lotus, // using lotus for mindfulness & meditation
-    LifeBuoy,
-    Flower2,
-  };
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      setLoading(true);
-      try {
-        // Adjust the endpoint as necessary.
-        const data = await apiFetch<Category[]>("/api/categories/public", {
-          token: token!,
-        });
-        setTopics(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to load topics.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Only fetch if modal is open
-    if (isOpen) {
-      if (token) {
-        fetchCategories();
-      }
-    }
-  }, [isOpen, token]);
+  const { topics, loading, error } = useTopics();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -105,8 +65,6 @@ export function TopicSelectorModal({
           <ScrollArea className="h-[60vh] pr-4">
             <div className="grid gap-4 py-4">
               {topics.map((topic) => {
-                // Use the iconMap to select the appropriate icon component.
-                // If no matching icon is found, fallback to a default icon, such as MessageCircle.
                 const Icon = iconMap[topic.icon] || MessageCircle;
                 return (
                   <Card

@@ -8,6 +8,7 @@ import { TopicSelectorModal } from "@/components/topic-selector-modal";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/contexts/auth-context";
 import { apiFetch, ApiError } from "@/lib/fetch";
+import { TopicsProvider } from "@/contexts/topics-context";
 
 interface ChatSession {
   id: string;
@@ -118,50 +119,52 @@ export default function Home() {
   // ----------------------------------------------------------------------------
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-background">
-        <ChatSidebar
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          onSelectSession={handleSelectSession}
-          onNewChat={handleNewChat}
-        />
-        <div className="flex-1 flex flex-col">
-          <header className="flex items-center justify-between p-4 border-b">
-            <div>
-              <h1 className="text-2xl font-bold">MindfulAI</h1>
-              <p className="text-sm text-muted-foreground">
-                Your AI companion for mental wellness
-              </p>
-            </div>
-            <ModeToggle />
-          </header>
-          <main className="flex-1 overflow-hidden">
-            {activeSession ? (
-              <Chat
-                session={activeSession}
-                onUpdateSession={(updatedSession) => {
-                  setSessions((prev) =>
-                    prev.map((s) =>
-                      s.id === updatedSession.id ? updatedSession : s,
-                    ),
-                  );
-                }}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center">
-                <p className="text-muted-foreground">
-                  Select a chat or start a new one
+      <TopicsProvider>
+        <div className="flex h-screen bg-background">
+          <ChatSidebar
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSelectSession={handleSelectSession}
+            onNewChat={handleNewChat}
+          />
+          <div className="flex-1 flex flex-col">
+            <header className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h1 className="text-2xl font-bold">MindfulAI</h1>
+                <p className="text-sm text-muted-foreground">
+                  Your AI companion for mental wellness
                 </p>
               </div>
-            )}
-          </main>
+              <ModeToggle />
+            </header>
+            <main className="flex-1 overflow-hidden">
+              {activeSession ? (
+                <Chat
+                  session={activeSession}
+                  onUpdateSession={(updatedSession) => {
+                    setSessions((prev) =>
+                      prev.map((s) =>
+                        s.id === updatedSession.id ? updatedSession : s,
+                      ),
+                    );
+                  }}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">
+                    Select a chat or start a new one
+                  </p>
+                </div>
+              )}
+            </main>
+          </div>
+          <TopicSelectorModal
+            isOpen={isTopicSelectorOpen}
+            onClose={() => setIsTopicSelectorOpen(false)}
+            onSelectTopic={handleSelectTopic}
+          />
         </div>
-        <TopicSelectorModal
-          isOpen={isTopicSelectorOpen}
-          onClose={() => setIsTopicSelectorOpen(false)}
-          onSelectTopic={handleSelectTopic}
-        />
-      </div>
+      </TopicsProvider>
     </ProtectedRoute>
   );
 }
