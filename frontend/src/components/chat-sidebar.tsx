@@ -42,12 +42,14 @@ export function ChatSidebar({
           {sessions.map((session) => {
             const topic =
               topics.find((t) => t._id === session.topic) || topics[0];
+            if (!topic) return null;
             const Icon = iconMap[topic.icon] || MessageCircle;
+
             return (
               <Button
                 key={session.id}
                 onClick={() => onSelectSession(session.id)}
-                className={`w-[88%] justify-start ${topic.gradient} ${topic.textColor} ${activeSessionId === session.id ? "ring-2 ring-primary" : ""}`}
+                className={`w-full justify-start ${topic.gradient} ${topic.textColor} ${activeSessionId === session.id ? "ring-2 ring-primary shadow-lg" : ""} `}
                 variant="ghost"
               >
                 <Icon className="mr-2 h-4 w-4" />

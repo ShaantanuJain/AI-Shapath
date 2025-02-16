@@ -65,11 +65,11 @@ export default function AdminCategoriesPage() {
   // Ensure only admins can access this page
   useEffect(() => {
     if (!user && authError) {
-      router.push("/login");
+      router.push("/");
     }
     if (user) {
       if (!("isAdmin" in user) || !user.isAdmin) {
-        router.push("/login");
+        router.push("/");
       }
     }
   }, [user, router, authError]);
