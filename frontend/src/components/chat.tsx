@@ -36,7 +36,7 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [messages, setMessages] = useState<Message[]>(session.messages);
   const [redirectSuggestion, setRedirectSuggestion] = useState<string | null>(
-    "Good Id",
+    null,
   );
   const { topics } = useTopics();
   const token = useAuth().token;
@@ -157,10 +157,6 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
   };
 
   // Optionally, you can pre-format an emotion text message then send it.
-  const handleSendEmotion = async (emotion: string) => {
-    const emotionText = `I'm feeling ${emotion.toLowerCase()}.`;
-    await sendMessage(emotionText);
-  };
   const handleCategoryChange = async () => {
     if (!redirectSuggestion || !token) return;
 
@@ -171,7 +167,9 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
           method: "POST",
           body: JSON.stringify({
             sessionId: session.id,
-            newCategoryId: redirectSuggestion,
+            newCategoryId: topics.find(
+              (topic) => topic.name === redirectSuggestion,
+            )?._id,
           }),
           token: token,
         },
@@ -180,6 +178,28 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       if (response.session) {
         onUpdateSession(response.session);
         setRedirectSuggestion(null);
+
+        // Reload chat messages
+        const fetchedChatLog = await apiFetch<{
+          messages: Message[];
+          session: ChatSession;
+        }>(`/api/chat/session/${session.id}`, {
+          method: "GET",
+          token: token,
+        });
+
+        if (fetchedChatLog) {
+          const newMessages: Message[] = fetchedChatLog.messages.map(
+            (msg: any) => ({
+              id: Date.now().toString() + Math.random(),
+              content: msg.content,
+              role: msg.role === "model" ? "model" : msg.role,
+              timestamp: new Date(msg.timestamp),
+            }),
+          );
+
+          setMessages(newMessages);
+        }
       }
     } catch (error) {
       console.error("Failed to change category:", error);
@@ -192,18 +212,6 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
         <h2 className="text-lg font-semibold mb-2">
           {currentTopic?.name || "Chat"}
         </h2>
-        <div className="flex flex-wrap gap-2">
-          {currentTopic?.emotions?.map((emotion) => (
-            <Button
-              key={emotion}
-              variant="outline"
-              size="sm"
-              onClick={() => handleSendEmotion(emotion)}
-            >
-              {emotion}
-            </Button>
-          ))}
-        </div>
       </div>
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">

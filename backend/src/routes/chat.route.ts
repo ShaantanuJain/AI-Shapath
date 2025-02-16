@@ -4,6 +4,7 @@ import { Session } from "../models/Session";
 import { chatResponse } from "../lib/gemini/chatResponse";
 import { authenticateToken } from "../middleware/auth";
 import { AuthRequest } from "../lib/types/middleware";
+import { ConversationCategory } from "../models/ConversationCategories";
 
 const router = express.Router();
 
@@ -59,11 +60,14 @@ router.post("/message", async (req: AuthRequest, res) => {
       redirectToOtherCategory?: string;
     };
 
+    const topics = await ConversationCategory.find({});
+
     try {
       const llmResponse = await chatResponse(chatLog.messages, userMessage, {
         systemInstruction,
         redirectToOtherCategory:
           session.conversation.redirectableToOtherCategory,
+        topics: topics.map((topic) => topic.name),
       });
 
       // Try parsing the JSON output from the AI
@@ -163,6 +167,8 @@ router.post("/change-category", async (req: AuthRequest, res) => {
   try {
     const { sessionId, newCategoryId } = req.body;
     const userId = req.user?.userId;
+
+    console.log(req.body);
 
     if (!sessionId || !newCategoryId || !userId) {
       res.status(400).json({

@@ -10,6 +10,7 @@ export async function chatResponse(
   session: {
     systemInstruction: string;
     redirectToOtherCategory: boolean;
+    topics: string[];
   },
 ) {
   const responseSchema: Schema = {
@@ -47,7 +48,11 @@ export async function chatResponse(
         ],
       },
     ],
-    systemInstruction: session.systemInstruction,
+    systemInstruction:
+      session.systemInstruction + session.redirectToOtherCategory
+        ? "\n\nRedirect to other category options. The topic should be from one of the following topics:\n\nTopics: " +
+          session.topics.join(", ")
+        : "",
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: responseSchema,
