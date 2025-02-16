@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,11 +34,57 @@ interface ChatProps {
 export function Chat({ session, onUpdateSession }: ChatProps) {
   const [input, setInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(session.messages);
   const { topics } = useTopics();
   const token = useAuth().token;
 
   // Find the topic that matches the session's topic ID.
   const currentTopic = topics.find((t) => t._id === session.topic);
+
+  // On mount (or whenever the session.id changes), fetch the base chat log
+  useEffect(() => {
+    const fetchChatLog = async () => {
+      if (!session.id || !token) return;
+      try {
+        const fetchedChatLog = await apiFetch<{
+          messages: Message[];
+          session: ChatSession;
+        }>(`/api/chat/session/${session.id}`, {
+          method: "GET",
+          token: token,
+        });
+
+        if (!fetchedChatLog) return;
+
+        // Transform backend chatLog messages into our Message interface
+        const newMessages: Message[] = fetchedChatLog.messages.map(
+          (msg: any) => ({
+            id: Date.now().toString() + Math.random(),
+            content: msg.content,
+            // Here, if role is "model", you may choose to map it to "assistant" for display.
+            role: msg.role === "model" ? "model" : msg.role,
+            timestamp: new Date(msg.timestamp),
+          }),
+        );
+
+        setMessages(newMessages);
+        if (session.lastMessage !== newMessages[newMessages.length - 1].content)
+          onUpdateSession({
+            ...session,
+            lastMessage:
+              newMessages.length > 0
+                ? newMessages[newMessages.length - 1].content
+                : "",
+          });
+      } catch (error) {
+        console.error("Failed to fetch chat log:", error);
+        // Optionally show a toast/notification to the user here.
+      }
+    };
+
+    fetchChatLog();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.id, token, onUpdateSession]);
 
   const sendMessage = async (messageContent: string) => {
     // Build an optimistic update if you like; here we just send the message and wait for the response.
@@ -49,13 +95,12 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       timestamp: new Date(),
     };
 
-    // Update the local session immediately
-    const updatedLocalSession: ChatSession = {
+    // Update the local messages immediately
+    setMessages((prevMessages) => [...prevMessages, newUserMessage]);
+    onUpdateSession({
       ...session,
-      messages: [...session.messages, newUserMessage],
       lastMessage: messageContent,
-    };
-    onUpdateSession(updatedLocalSession);
+    });
 
     try {
       setIsAiTyping(true);
@@ -71,21 +116,24 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
         },
       );
 
-      // The backend returns an updated chatLog and session
-      // Assume chatLog.messages holds the full conversation.
-      const { chatLog, session: updatedSession } = response;
-      const messages: Message[] = chatLog.messages.map((msg: any) => ({
-        id: Date.now().toString() + Math.random(), // for UI uniqueness
-        content: msg.content,
-        role: msg.role === "model" ? "assistant" : msg.role,
-        timestamp: new Date(msg.timestamp),
-      }));
-      // Update the session with latest messages and last message
+      // The backend returns an updated chatLog and session.
+      // Convert chatLog.messages to the Message interface.
+      const updatedMessages: Message[] = response.chatLog.messages.map(
+        (msg: any) => ({
+          id: Date.now().toString() + Math.random(),
+          content: msg.content,
+          role: msg.role === "model" ? "model" : msg.role,
+          timestamp: new Date(msg.timestamp),
+        }),
+      );
+
+      setMessages(updatedMessages);
       onUpdateSession({
-        ...updatedSession,
-        messages,
+        ...response.session,
         lastMessage:
-          messages.length > 0 ? messages[messages.length - 1].content : "",
+          updatedMessages.length > 0
+            ? updatedMessages[updatedMessages.length - 1].content
+            : "",
       });
     } catch (error: any) {
       console.error("Sending message failed:", error);
@@ -130,7 +178,7 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       </div>
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {session.messages.map((message) => (
+          {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${
