@@ -13,6 +13,9 @@ interface ConversationCategory {
   name: string;
   description: string;
   prompt: string;
+  icon?: string;
+  gradient?: string;
+  textColor?: string;
   redirectableToOtherCategory: boolean;
   createdAt: string;
   updatedAt: string;
@@ -28,10 +31,13 @@ export default function AdminCategoriesPage() {
     name: "",
     description: "",
     prompt: "",
+    icon: "",
+    gradient: "",
+    textColor: "",
     redirectableToOtherCategory: false,
   });
 
-  // Editing state for updating an existing category
+  // Editing state for updating existing category
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
     null,
   );
@@ -39,11 +45,17 @@ export default function AdminCategoriesPage() {
     name: string;
     description: string;
     prompt: string;
+    icon: string;
+    gradient: string;
+    textColor: string;
     redirectableToOtherCategory: boolean;
   }>({
     name: "",
     description: "",
     prompt: "",
+    icon: "",
+    gradient: "",
+    textColor: "",
     redirectableToOtherCategory: false,
   });
 
@@ -114,6 +126,9 @@ export default function AdminCategoriesPage() {
         name: "",
         description: "",
         prompt: "",
+        icon: "",
+        gradient: "",
+        textColor: "",
         redirectableToOtherCategory: false,
       });
       fetchCategories();
@@ -161,6 +176,9 @@ export default function AdminCategoriesPage() {
       name: category.name,
       description: category.description,
       prompt: category.prompt,
+      icon: category.icon || "",
+      gradient: category.gradient || "",
+      textColor: category.textColor || "",
       redirectableToOtherCategory: category.redirectableToOtherCategory,
     });
   };
@@ -216,6 +234,35 @@ export default function AdminCategoriesPage() {
               required
             ></textarea>
           </div>
+          <div>
+            <label className="block">
+              Icon (e.g., MessageCircle, Brain, etc.)
+            </label>
+            <Input
+              name="icon"
+              value={form.icon}
+              onChange={(e) => handleChange(e, "create")}
+              placeholder="Icon name"
+            />
+          </div>
+          <div>
+            <label className="block">Gradient (CSS classes)</label>
+            <Input
+              name="gradient"
+              value={form.gradient}
+              onChange={(e) => handleChange(e, "create")}
+              placeholder="e.g., bg-gradient-to-r from-[#5CA9E9] to-white"
+            />
+          </div>
+          <div>
+            <label className="block">Text Color (CSS classes)</label>
+            <Input
+              name="textColor"
+              value={form.textColor}
+              onChange={(e) => handleChange(e, "create")}
+              placeholder="e.g., text-[#00264D]"
+            />
+          </div>
           <div className="flex items-center gap-2">
             <label htmlFor="create-redirect">
               Redirectable to other category?
@@ -246,7 +293,7 @@ export default function AdminCategoriesPage() {
                 className="p-4 border rounded flex flex-col gap-2"
               >
                 {editingCategoryId === cat._id ? (
-                  // Edit mode: Show a form for editing all the fields.
+                  // Edit mode: Show a form for editing all fields.
                   <form onSubmit={submitEdit} className="space-y-2">
                     <div>
                       <label className="block">Name</label>
@@ -275,6 +322,33 @@ export default function AdminCategoriesPage() {
                         onChange={(e) => handleChange(e, "edit")}
                         required
                       ></textarea>
+                    </div>
+                    <div>
+                      <label className="block">Icon</label>
+                      <Input
+                        name="icon"
+                        value={editingData.icon}
+                        onChange={(e) => handleChange(e, "edit")}
+                        placeholder="Icon name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block">Gradient</label>
+                      <Input
+                        name="gradient"
+                        value={editingData.gradient}
+                        onChange={(e) => handleChange(e, "edit")}
+                        placeholder="CSS gradient classes"
+                      />
+                    </div>
+                    <div>
+                      <label className="block">Text Color</label>
+                      <Input
+                        name="textColor"
+                        value={editingData.textColor}
+                        onChange={(e) => handleChange(e, "edit")}
+                        placeholder="CSS text color classes"
+                      />
                     </div>
                     <div className="flex items-center gap-2">
                       <label htmlFor={`edit-redirect-${cat._id}`}>
@@ -311,6 +385,21 @@ export default function AdminCategoriesPage() {
                     <div>
                       <strong>Prompt:</strong> {cat.prompt}
                     </div>
+                    {cat.icon && (
+                      <div>
+                        <strong>Icon:</strong> {cat.icon}
+                      </div>
+                    )}
+                    {cat.gradient && (
+                      <div>
+                        <strong>Gradient:</strong> {cat.gradient}
+                      </div>
+                    )}
+                    {cat.textColor && (
+                      <div>
+                        <strong>Text Color:</strong> {cat.textColor}
+                      </div>
+                    )}
                     <div>
                       <strong>Redirectable:</strong>{" "}
                       {cat.redirectableToOtherCategory ? "Yes" : "No"}

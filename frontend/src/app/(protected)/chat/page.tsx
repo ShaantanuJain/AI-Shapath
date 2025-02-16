@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chat } from "@/components/chat";
 import { ModeToggle } from "@/components/mode-toggle";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { TopicSelectorModal } from "@/components/topic-selector-modal";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useAuth } from "@/contexts/auth-context";
+import { apiFetch, ApiError } from "@/lib/fetch";
 
 interface ChatSession {
   id: string;
@@ -26,32 +28,94 @@ export default function Home() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isTopicSelectorOpen, setIsTopicSelectorOpen] = useState(false);
+  const { token } = useAuth();
 
+  // ----------------------------------------------------------------------------
+  // 1. Fetch existing sessions from the backend when the component mounts
+  // ----------------------------------------------------------------------------
+  useEffect(() => {
+    async function fetchSessions() {
+      try {
+        // Use our apiFetch function to GET sessions
+        const data = await apiFetch<any[]>("/sessions", { token: token! });
+        const fetchedSessions: ChatSession[] = data.map((session) => ({
+          id: session._id, // from MongoDB document
+          title: session.conversation?.name || "Untitled",
+          topic: session.conversation?._id || "",
+          lastMessage: session.summary || "",
+          messages: [], // Fetch messages separately if needed
+        }));
+        setSessions(fetchedSessions);
+      } catch (error) {
+        if (error instanceof ApiError) {
+          console.error(`Error [${error.status}]:`, error.message);
+        } else {
+          console.error("Error fetching sessions:", error);
+        }
+      }
+    }
+
+    if (token) fetchSessions();
+  }, [token]);
+
+  // ----------------------------------------------------------------------------
+  // 2. Handler to open modal for picking a new topic
+  // ----------------------------------------------------------------------------
   const handleNewChat = () => {
     setIsTopicSelectorOpen(true);
   };
 
-  const handleSelectTopic = (topicId: string) => {
-    const newSession: ChatSession = {
-      id: Date.now().toString(),
-      title: `New ${topicId.charAt(0).toUpperCase() + topicId.slice(1)} Chat`,
-      topic: topicId,
-      lastMessage: "",
-      messages: [],
-    };
-    setSessions([...sessions, newSession]);
-    setActiveSessionId(newSession.id);
-    setIsTopicSelectorOpen(false);
+  // ----------------------------------------------------------------------------
+  // 3. Handler when a user picks a topic. Create a new session in the backend.
+  // ----------------------------------------------------------------------------
+  const handleSelectTopic = async (topicId: string) => {
+    if (!token) return;
+    try {
+      // "topicId" here can be the conversationCategoryId from your database.
+      // Use our custom apiFetch for a POST request.
+      const newSessionData = await apiFetch<any>("/sessions", {
+        token,
+        method: "POST",
+        body: JSON.stringify({ conversationCategoryId: topicId }),
+      });
+
+      // Convert the created session to ChatSession format for the frontend
+      const newSession: ChatSession = {
+        id: newSessionData._id,
+        title: newSessionData.conversation?.name || "New Chat",
+        topic: newSessionData.conversation?._id || "",
+        lastMessage: "",
+        messages: [],
+      };
+
+      setSessions([...sessions, newSession]);
+      setActiveSessionId(newSession.id);
+      setIsTopicSelectorOpen(false);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        console.error(`Error [${error.status}]:`, error.message);
+      } else {
+        console.error("Error creating a new session:", error);
+      }
+    }
   };
 
+  // ----------------------------------------------------------------------------
+  // 4. Handler when selecting an existing session
+  // ----------------------------------------------------------------------------
   const handleSelectSession = (sessionId: string) => {
     setActiveSessionId(sessionId);
+    // Optionally, fetch messages from your ChatLog store via another apiFetch call.
   };
 
-  const activeSession = sessions.find(
-    (session) => session.id === activeSessionId,
-  );
+  // ----------------------------------------------------------------------------
+  // 5. Find the active session to display in <Chat />
+  // ----------------------------------------------------------------------------
+  const activeSession = sessions.find((s) => s.id === activeSessionId);
 
+  // ----------------------------------------------------------------------------
+  // 6. Render
+  // ----------------------------------------------------------------------------
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-background">
@@ -76,8 +140,8 @@ export default function Home() {
               <Chat
                 session={activeSession}
                 onUpdateSession={(updatedSession) => {
-                  setSessions(
-                    sessions.map((s) =>
+                  setSessions((prev) =>
+                    prev.map((s) =>
                       s.id === updatedSession.id ? updatedSession : s,
                     ),
                   );

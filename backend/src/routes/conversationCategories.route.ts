@@ -6,7 +6,29 @@ import type { Request, Response } from "express";
 
 const router = express.Router();
 
-// Get all categories
+// --------------------------
+// Public route (non-admin)
+// --------------------------
+router.get(
+  "/public",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      // Return only fields that the frontend needs
+      const categories = await ConversationCategory.find(
+        {},
+        "_id name description icon imageUrl gradient textColor",
+      );
+      res.json(categories);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get categories" });
+    }
+  },
+);
+
+// --------------------------
+// Admin protected routes
+// --------------------------
 router.get(
   "/",
   authenticateToken,
@@ -21,7 +43,7 @@ router.get(
   },
 );
 
-// Get one category by ID
+// Get one category by ID (admin)
 router.get(
   "/:id",
   authenticateToken,
@@ -40,19 +62,31 @@ router.get(
   },
 );
 
-// Create a new category
+// Create a new category (admin)
 router.post(
   "/",
   authenticateToken,
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const { name, description, prompt, redirectableToOtherCategory } =
-        req.body;
+      const {
+        name,
+        description,
+        prompt,
+        icon,
+        imageUrl,
+        gradient,
+        textColor,
+        redirectableToOtherCategory,
+      } = req.body;
       const newCategory = new ConversationCategory({
         name,
         description,
         prompt,
+        icon,
+        imageUrl,
+        gradient,
+        textColor,
         redirectableToOtherCategory,
       });
       await newCategory.save();
@@ -65,18 +99,35 @@ router.post(
   },
 );
 
-// Update a category
+// Update a category (admin)
 router.put(
   "/:id",
   authenticateToken,
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const { name, description, prompt, redirectableToOtherCategory } =
-        req.body;
+      const {
+        name,
+        description,
+        prompt,
+        icon,
+        imageUrl,
+        gradient,
+        textColor,
+        redirectableToOtherCategory,
+      } = req.body;
       const updatedCategory = await ConversationCategory.findByIdAndUpdate(
         req.params.id,
-        { name, description, prompt, redirectableToOtherCategory },
+        {
+          name,
+          description,
+          prompt,
+          icon,
+          imageUrl,
+          gradient,
+          textColor,
+          redirectableToOtherCategory,
+        },
         { new: true },
       );
       if (!updatedCategory) {
@@ -92,7 +143,7 @@ router.put(
   },
 );
 
-// Delete a category
+// Delete a category (admin)
 router.delete(
   "/:id",
   authenticateToken,
