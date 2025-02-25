@@ -42,7 +42,7 @@ export function ChatSidebar({
           {sessions.map((session) => {
             const topic =
               topics.find((t) => t._id === session.topic) || topics[0];
-            if (!topic) return null;
+            if (!topic) return <div key={session.topic}></div>;
             const Icon = iconMap[topic.icon] || MessageCircle;
 
             return (

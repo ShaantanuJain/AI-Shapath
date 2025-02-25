@@ -21,6 +21,32 @@ interface ConversationCategory {
   updatedAt: string;
 }
 
+const gradients = [
+  "bg-gradient-to-r from-[#5CA9E9] to-white",
+  "bg-gradient-to-r from-[#7BC393] to-[#E4F3E3]",
+  "bg-gradient-to-r from-[#FFA5CB] to-[#FFD3A5]",
+  "bg-gradient-to-r from-[#31B7C2] to-[#B2EBF2]",
+  "bg-gradient-to-r from-[#9E7BB5] to-[#D3D3FF]",
+  "bg-gradient-to-r from-[#45B649] to-[#DCE35B]",
+  "bg-gradient-to-r from-[#006663] to-[#D2FFFF]",
+  "bg-gradient-to-r from-[#5CA9E9] to-[#E4F3E3]",
+  "bg-gradient-to-r from-[#505250] to-[#CBD3C1]",
+  "bg-gradient-to-r from-[#26C6DA] to-[#7BC393]",
+];
+
+const textColors = [
+  "text-[#00264D]",
+  "text-[#0B3B0B]",
+  "text-[#800020]",
+  "text-[#004D4D]",
+  "text-[#3A015C]",
+  "text-[#3C4D03]",
+  "text-[#000033]",
+  "text-[#1A0066]",
+  "text-[#000000]",
+  "text-[#004D00]",
+];
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<ConversationCategory[]>([]);
   const [error, setError] = useState<string>("");
@@ -91,7 +117,9 @@ export default function AdminCategoriesPage() {
   }, [token]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
     formType: "create" | "edit" = "create",
   ) => {
     const { name, value, type } = e.target;
@@ -247,21 +275,35 @@ export default function AdminCategoriesPage() {
           </div>
           <div>
             <label className="block">Gradient (CSS classes)</label>
-            <Input
+            <select
               name="gradient"
               value={form.gradient}
               onChange={(e) => handleChange(e, "create")}
-              placeholder="e.g., bg-gradient-to-r from-[#5CA9E9] to-white"
-            />
+              className="w-full p-2 border rounded"
+            >
+              <option value="">Select Gradient</option>
+              {gradients.map((gradient, index) => (
+                <option key={index} value={gradient}>
+                  {gradient}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block">Text Color (CSS classes)</label>
-            <Input
+            <select
               name="textColor"
               value={form.textColor}
               onChange={(e) => handleChange(e, "create")}
-              placeholder="e.g., text-[#00264D]"
-            />
+              className="w-full p-2 border rounded"
+            >
+              <option value="">Select Text Color</option>
+              {textColors.map((color, index) => (
+                <option key={index} value={color}>
+                  {color}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex items-center gap-2">
             <label htmlFor="create-redirect">
@@ -334,21 +376,35 @@ export default function AdminCategoriesPage() {
                     </div>
                     <div>
                       <label className="block">Gradient</label>
-                      <Input
+                      <select
                         name="gradient"
                         value={editingData.gradient}
                         onChange={(e) => handleChange(e, "edit")}
-                        placeholder="CSS gradient classes"
-                      />
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="">Select Gradient</option>
+                        {gradients.map((gradient, index) => (
+                          <option key={index} value={gradient}>
+                            {gradient}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block">Text Color</label>
-                      <Input
+                      <select
                         name="textColor"
                         value={editingData.textColor}
                         onChange={(e) => handleChange(e, "edit")}
-                        placeholder="CSS text color classes"
-                      />
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="">Select Text Color</option>
+                        {textColors.map((color, index) => (
+                          <option key={index} value={color}>
+                            {color}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="flex items-center gap-2">
                       <label htmlFor={`edit-redirect-${cat._id}`}>
