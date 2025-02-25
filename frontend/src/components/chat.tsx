@@ -38,6 +38,7 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
   const [redirectSuggestion, setRedirectSuggestion] = useState<string | null>(
     null,
   );
+  const [isLoading, setIsLoading] = useState(true);
   const { topics } = useTopics();
   const token = useAuth().token;
 
@@ -45,9 +46,11 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
   const currentTopic = topics.find((t) => t._id === session.topic);
 
   // On mount (or whenever the session.id changes), fetch the base chat log
+  // Modify the useEffect that fetches chat logs
   useEffect(() => {
     const fetchChatLog = async () => {
       if (!session.id || !token) return;
+      setIsLoading(true);
       try {
         const fetchedChatLog = await apiFetch<{
           messages: Message[];
@@ -59,19 +62,17 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
 
         if (!fetchedChatLog) return;
 
-        // Transform backend chatLog messages into our Message interface
         const newMessages: Message[] = fetchedChatLog.messages.map(
           (msg: any) => ({
             id: Date.now().toString() + Math.random(),
             content: msg.content,
-            // Here, if role is "model", you may choose to map it to "assistant" for display.
             role: msg.role === "model" ? "model" : msg.role,
             timestamp: new Date(msg.timestamp),
           }),
         );
 
         setMessages(newMessages);
-        if (session.lastMessage !== newMessages[0].content)
+        if (session.lastMessage !== newMessages[0]?.content)
           onUpdateSession({
             ...session,
             lastMessage: newMessages.length > 0 ? newMessages[0].content : "",
@@ -79,6 +80,8 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       } catch (error) {
         console.error("Failed to fetch chat log:", error);
         setMessages([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -206,6 +209,9 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
     }
   };
 
+  // Disable input while loading or AI is typing
+  const isInputDisabled = isLoading || isAiTyping;
+
   return (
     <Card className={`flex flex-col h-full ${currentTopic?.gradient || ""}`}>
       <div className={`p-4 border-b ${currentTopic?.textColor || ""}`}>
@@ -272,11 +278,14 @@ export function Chat({ session, onUpdateSession }: ChatProps) {
       <div className="p-4 border-t">
         <form onSubmit={handleSend} className="flex gap-2">
           <Input
-            placeholder="Type your message..."
+            placeholder={
+              isInputDisabled ? "Please wait..." : "Type your message..."
+            }
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            disabled={isInputDisabled}
           />
-          <Button type="submit" size="icon">
+          <Button type="submit" size="icon" disabled={isInputDisabled}>
             <Send className="h-4 w-4" />
             <span className="sr-only">Send message</span>
           </Button>

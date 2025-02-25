@@ -3,6 +3,8 @@ import { authenticateToken } from "../middleware/auth";
 import { Session } from "../models/Session";
 import { ConversationCategory } from "../models/ConversationCategories";
 import type { Request, Response } from "express";
+import { chatResponse } from "../lib/gemini/chatResponse";
+import { ChatLog } from "../models/ChatLog";
 
 const router = express.Router();
 
@@ -69,6 +71,7 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    // Create the new session
     const newSession = new Session({
       userId,
       conversation: conversationCategory._id,
@@ -76,7 +79,52 @@ router.post("/", authenticateToken, async (req: AuthRequest, res: Response) => {
       nMinusTenSummary: nMinusTenSummary || "",
     });
     await newSession.save();
-    res.status(201).json(newSession);
+
+    // Get initial AI response using the category's system prompt
+    const systemInstruction =
+      conversationCategory.prompt || "You are a helpful assistant.";
+
+    try {
+      const llmResponse = await chatResponse([], "", {
+        systemInstruction,
+        redirectToOtherCategory: false,
+        topics: [], // Empty for initial message
+      });
+
+      // Parse the response
+      const responseText =
+        llmResponse.response.candidates &&
+        llmResponse.response.candidates[0].content.parts[0].text;
+      if (!responseText) {
+        throw new Error("AI response is empty");
+      }
+      const aiResult = JSON.parse(responseText);
+
+      // Create a new chat log with the AI's initial message
+      const chatLog = new ChatLog({
+        session: newSession._id,
+        userId,
+        messages: [
+          {
+            role: "model",
+            content: aiResult.message,
+          },
+        ],
+      });
+      await chatLog.save();
+
+      // Return both the session and initial chat log
+      res.status(201).json({
+        session: newSession,
+        chatLog,
+      });
+    } catch (error) {
+      // If AI response fails, still create session but without initial message
+      res.status(201).json({
+        session: newSession,
+        chatLog: null,
+      });
+    }
   } catch (error) {
     res.status(500).json({ error: "Failed to create session" });
   }

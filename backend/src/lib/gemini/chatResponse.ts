@@ -48,11 +48,7 @@ export async function chatResponse(
         ],
       },
     ],
-    systemInstruction:
-      session.systemInstruction + session.redirectToOtherCategory
-        ? "\n\nRedirect to other category options. The topic should be from one of the following topics:\n\nTopics: " +
-          session.topics.join(", ")
-        : "",
+    systemInstruction: session.systemInstruction,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: responseSchema,

@@ -24,17 +24,27 @@ interface Message {
   role: "user" | "model";
   timestamp: Date;
 }
+const ProcessingDialog = () => {
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="bg-card p-6 rounded-lg shadow-lg">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-foreground">Processing your request...</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isTopicSelectorOpen, setIsTopicSelectorOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { token } = useAuth();
   const { topics } = useTopics();
 
-  // ----------------------------------------------------------------------------
-  // 1. Fetch existing sessions from the backend when the component mounts
-  // ----------------------------------------------------------------------------
   useEffect(() => {
     async function fetchSessions() {
       try {
@@ -60,29 +70,25 @@ export default function Home() {
     if (token) fetchSessions();
   }, [token]);
 
-  // ----------------------------------------------------------------------------
-  // 2. Handler to open modal for picking a new topic
-  // ----------------------------------------------------------------------------
   const handleNewChat = () => {
     setIsTopicSelectorOpen(true);
   };
 
-  // ----------------------------------------------------------------------------
-  // 3. Handler when a user picks a topic. Create a new session in the backend.
-  // ----------------------------------------------------------------------------
   const handleSelectTopic = async (topicId: string) => {
     if (!token) return;
+
     try {
-      // "topicId" here can be the conversationCategoryId from your database.
-      // Use our custom apiFetch for a POST request.
+      setIsProcessing(true); // Start processing
+      setIsTopicSelectorOpen(false); // Close the modal immediately
+
       const newSessionData = await apiFetch<any>("/sessions", {
         token,
         method: "POST",
         body: JSON.stringify({ conversationCategoryId: topicId }),
       });
+
       const topic = topics.find((t) => t._id === topicId);
 
-      // Convert the created session to ChatSession format for the frontend
       const newSession: ChatSession = {
         id: newSessionData._id,
         title: topic?.name || "New Chat",
@@ -93,32 +99,25 @@ export default function Home() {
 
       setSessions([...sessions, newSession]);
       setActiveSessionId(newSession.id);
-      setIsTopicSelectorOpen(false);
     } catch (error) {
       if (error instanceof ApiError) {
         console.error(`Error [${error.status}]:`, error.message);
+        // You might want to show an error toast here
       } else {
         console.error("Error creating a new session:", error);
       }
+    } finally {
+      setIsProcessing(false); // End processing
     }
   };
 
-  // ----------------------------------------------------------------------------
-  // 4. Handler when selecting an existing session
-  // ----------------------------------------------------------------------------
   const handleSelectSession = (sessionId: string) => {
     setActiveSessionId(sessionId);
     // Optionally, fetch messages from your ChatLog store via another apiFetch call.
   };
 
-  // ----------------------------------------------------------------------------
-  // 5. Find the active session to display in <Chat />
-  // ----------------------------------------------------------------------------
   const activeSession = sessions.find((s) => s.id === activeSessionId);
 
-  // ----------------------------------------------------------------------------
-  // 6. Render
-  // ----------------------------------------------------------------------------
   return (
     <ProtectedRoute>
       <TopicsProvider>
@@ -165,6 +164,7 @@ export default function Home() {
             onClose={() => setIsTopicSelectorOpen(false)}
             onSelectTopic={handleSelectTopic}
           />
+          {isProcessing && <ProcessingDialog />}
         </div>
       </TopicsProvider>
     </ProtectedRoute>
